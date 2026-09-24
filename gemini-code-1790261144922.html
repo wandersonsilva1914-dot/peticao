@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão de Pautas</title>
+  <style>
+    :root {
+      --primary: #0f274a;
+      --primary-light: #1e3a8a;
+      --accent: #2563eb;
+      --accent-teal: #0f766e;
+      --accent-amber: #b45309;
+      --bg: #e2e8f0;
+      --surface: #ffffff;
+      --surface-subtle: #f8fafc;
+      --border-color: #cbd5e1;
+      --border-dark: #94a3b8;
+      --text: #0f172a;
+      --text-muted: #475569;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 12px;
+    }
+
+    .main-container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-dark);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+
+    /* BARRA SUPERIOR */
+    .app-bar {
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .app-bar h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button, label.btn-file {
+      padding: 7px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .btn-save-db { background: #0284c7; color: white; }
+    .btn-save-db:hover { background: #0369a1; }
+    .btn-add { background: #0d9488; color: white; }
+    .btn-add:hover { background: #0f766e; }
+    .btn-pdf { background: #16a34a; color: white; }
+    .btn-pdf:hover { background: #15803d; }
+    .btn-file { background: #475569; color: white; }
+    .btn-file:hover { background: #334155; }
+    .btn-reset { background: #dc2626; color: white; }
+    .btn-reset:hover { background: #b91c1c; }
+    .btn-del-topic { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 8px; font-size: 11px; }
+    .btn-del-topic:hover { background: #dc2626; color: white; }
+
+    /* PAINEL DO BANCO DE DADOS LOCAL */
+    .db-panel {
+      background: #f1f5f9;
+      border-bottom: 2px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .db-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .db-controls label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .db-controls select {
+      flex: 1;
+      max-width: 380px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      font-size: 13px;
+      background: white;
+    }
+
+    .db-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-db-sub {
+      background: white;
+      border: 1px solid var(--border-dark);
+      color: var(--text);
+      padding: 5px 10px;
+      font-size: 11.5px;
+    }
+    .btn-db-sub:hover { background: #e2e8f0; }
+
+    /* ÁREA DA FOLHA DE PAUTA */
+    .sheet-body {
+      padding: 32px 36px;
+      background: #ffffff;
+    }
+
+    /* SELETOR DE MODELO */
+    .model-selector-wrap {
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .model-selector-wrap label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+
+    .model-selector-wrap select {
+      flex: 1;
+      padding: 7px 10px;
+      font-size: 13.5px;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      background: white;
+      font-weight: 600;
+      color: var(--primary-light);
+    }
+
+    /* CABEÇALHO COM BANNER E FOTO */
+    .header-banner {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border: 2px solid var(--primary);
+      border-radius: 6px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+      margin-bottom: 20px;
+    }
+
+    .header-photo {
+      width: 105px;
+      height: 105px;
+      border: 2px solid var(--primary-light);
+      border-radius: 6px;
+      background: #e2e8f0;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .header-text {
+      flex: 1;
+    }
+
+    .header-text h2.main-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      line-height: 1.3;
+    }
+
+    .header-text .sub-info {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* METADADOS DA SESSÃO */
+    .meta-box {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--surface-subtle);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .meta-cell {
+      padding: 10px 14px;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .meta-cell:last-child {
+      border-right: none;
+    }
+
+    .meta-cell label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .meta-cell input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: white;
+      font-weight: 600;
+    }
+
+    /* BLOCO DE ORAÇÕES ESTRUTURADO */
+    .prayer-table {
+      border: 1px solid #a7f3d0;
+      border-left: 5px solid var(--accent-teal);
+      border-radius: 6px;
+      background: #f0fdf4;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+
+    .prayer-cell {
+      padding: 10px 16px;
+    }
+
+    .prayer-cell:first-child {
+      border-right: 1px solid #bbf7d0;
+    }
+
+    .prayer-cell label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #065f46;
+      margin-bottom: 4px;
+    }
+
+    .prayer-cell input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid #86efac;
+      border-radius: 4px;
+      background: white;
+      font-weight: 600;
+    }
+
+    /* QUADROS DELIMITADOS PARA CONTEÚDO */
+    .structured-card {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: #ffffff;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+
+    .card-title-bar {
+      background: #f1f5f9;
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title-bar h3 {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-body {
+      padding: 14px 16px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: inherit;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    /* ITENS DE ASSUNTOS COM BORDAS E DIVISÕES NÍTIDAS */
+    .topic-item {
+      border: 1px solid var(--border-dark);
+      border-left: 5px solid var(--primary-light);
+      border-radius: 6px;
+      margin-bottom: 16px;
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      overflow: hidden;
+    }
+
+    .topic-row-header {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topic-seq {
+      background: var(--primary);
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .topic-title-input {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--primary);
+    }
+
+    .topic-row-middle {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      border-bottom: 1px solid var(--border-color);
+      background: #ffffff;
+    }
+
+    .topic-col {
+      padding: 10px 14px;
+    }
+
+    .topic-col:first-child {
+      border-right: 1px solid var(--border-color);
+    }
+
+    .topic-col label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .topic-col input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    .topic-row-bottom {
+      padding: 10px 14px;
+      background: #ffffff;
+    }
+
+    .topic-row-bottom label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    /* BARRA DE TEMPO DELIMITADA */
+    .time-summary-box {
+      border: 1px solid #fcd34d;
+      border-left: 5px solid var(--accent-amber);
+      background: #fffbeb;
+      border-radius: 6px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 13.5px;
+      color: #92400e;
+      margin-top: 14px;
+    }
+
+    /* RODAPÉ DO DOCUMENTO */
+    .sheet-footer {
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 2px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* FORMATO IMPRESSÃO / PDF */
+    @media print {
+      body { background: white; padding: 0; }
+      .main-container { border: none; box-shadow: none; max-width: 100%; }
+      .app-bar, .db-panel, .model-selector-wrap, .btn-del-topic { display: none !important; }
+      .sheet-body { padding: 0; }
+      input, textarea {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        resize: none !important;
+      }
+      .header-banner { border: 2px solid #0f274a !important; background: #fafafa !important; }
+      .meta-box { border: 1px solid #94a3b8 !important; }
+      .meta-cell { border-right: 1px solid #94a3b8 !important; }
+      .prayer-table { border: 1px solid #10b981 !important; }
+      .structured-card { border: 1px solid #94a3b8 !important; }
+      .topic-item { border: 1px solid #94a3b8 !important; border-left: 5px solid #0f274a !important; page-break-inside: avoid; }
+      .time-summary-box { border: 1px solid #f59e0b !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="main-container">
+  
+  <!-- BARRA DE FERRAMENTAS PRINCIPAIS -->
+  <header class="app-bar">
+    <h1>Controle de Pautas</h1>
+    <div class="btn-group">
+      <label class="btn-file" for="photoInput">Substituir Foto</label>
+      <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="atualizarFoto(event)">
+      <button class="btn-add" onclick="adicionarTopico()">Adicionar Assunto</button>
+      <button class="btn-save-db" onclick="salvarPautaNoBanco()">Salvar no Banco</button>
+      <button class="btn-pdf" onclick="window.print()">Gerar PDF</button>
+      <button class="btn-reset" onclick="novaPautaEmBranco()">Limpar</button>
+    </div>
+  </header>
+
+  <!-- PAINEL DO BANCO DE DADOS INTEGRADO -->
+  <section class="db-panel">
+    <div class="db-controls">
+      <label for="pautasSalvasSelect">Pautas Salvas no Banco:</label>
+      <select id="pautasSalvasSelect" onchange="carregarPautaSelecionada()">
+        <option value="">-- Selecione uma pauta salva --</option>
+      </select>
+    </div>
+    <div class="db-actions">
+      <button class="btn-db-sub" onclick="excluirPautaDoBanco()">Excluir Pauta</button>
+      <button class="btn-db-sub" onclick="exportarBackupJSON()">Exportar Backup</button>
+    </div>
+  </section>
+
+  <!-- FOLHA OFICIAL DA PAUTA -->
+  <main class="sheet-body">
+
+    <!-- SELETOR DO MODELO DE CABEÇALHO -->
+    <div class="model-selector-wrap">
+      <label for="tipoCabecalhoSelect">Estrutura do Cabeçalho:</label>
+      <select id="tipoCabecalhoSelect" onchange="alterarModeloCabecalho()">
+        <option value="1">Pauta para o Corpo de Anciãos</option>
+        <option value="2">Pauta para a Comissão de Funcionamento</option>
+        <option value="3" selected>Pauta para a Comissão de Funcionamento & Todos os Corpos de Anciãos</option>
+      </select>
+    </div>
+
+    <!-- BANNER DE IDENTIFICAÇÃO -->
+    <div class="header-banner">
+      <div class="header-photo" id="photoBox">
+        <span style="font-size:11px; color:#64748b; font-weight:700;">Foto</span>
+      </div>
+      <div class="header-text">
+        <h2 class="main-title" id="cabecalhoTitulo">PAUTA PARA A COMISSÃO DE FUNCIONAMENTO<br>& TODOS OS CORPOS DE ANCIÃOS</h2>
+        <div class="sub-info" id="cabecalhoSub">Salão do Reino das Testemunhas de Jeová</div>
+        <div class="sub-info" id="cabecalhoEnd">Rua José Ferreira Neves, 347</div>
+      </div>
+    </div>
+
+    <!-- DADOS DA SESSÃO (DATA, HORÁRIO, LOCAL) -->
+    <div class="meta-box">
+      <div class="meta-cell">
+        <label>Data</label>
+        <input type="date" id="campoData" oninput="autoSaveTemporario()">
+      </div>
+      <div class="meta-cell">
+        <label>Horário</label>
+        <input type="time" id="campoHora" oninput="autoSaveTemporario()">
+      </div>
+      <div class="meta-cell">
+        <label>Local</label>
+        <input type="text" id="campoLocal" placeholder="Local da reunião" oninput="autoSaveTemporario()">
+      </div>
+    </div>
+
+    <!-- QUADRO DE ORAÇÕES -->
+    <div class="prayer-table">
+      <div class="prayer-cell">
+        <label>Oração Inicial</label>
+        <input type="text" id="campoOracaoIni" placeholder="Nome do irmão" oninput="autoSaveTemporario()">
+      </div>
+      <div class="prayer-cell">
+        <label>Oração Final</label>
+        <input type="text" id="campoOracaoFim" placeholder="Nome do irmão" oninput="autoSaveTemporario()">
+      </div>
+    </div>
+
+    <!-- OBJETIVO GERAL / RESUMO INICIAL -->
+    <div class="structured-card">
+      <div class="card-title-bar">
+        <h3>Objetivo Geral / Resumo Inicial</h3>
+      </div>
+      <div class="card-body">
+        <textarea id="campoResumo" rows="4" placeholder="Descreva os objetivos da reunião, histórico ou pontos preliminares..." oninput="autoSaveTemporario()"></textarea>
+      </div>
+    </div>
+
+    <!-- ASSUNTOS A CONSIDERAR -->
+    <div class="structured-card">
+      <div class="card-title-bar">
+        <h3>Assuntos a Considerar</h3>
+      </div>
+      <div class="card-body">
+        <div id="containerAssuntos"></div>
+
+        <div class="time-summary-box">
+          <span>Tempo Total Estimado:</span>
+          <span id="displayTempoTotal">0 minutos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RODAPÉ -->
+    <footer class="sheet-footer">
+      <span>Documento de Uso Restrito e Deliberação Interna</span>
+      <span id="dataAtualRodape">Gerado em: Setembro de 2026</span>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // Chaves de armazenamento
+  const DB_KEY = 'BANCO_DE_DADOS_PAUTAS_SISTEMA';
+  const CURRENT_KEY = 'PAUTA_ATUAL_SISTEMA_DRAFT';
+
+  let assuntos = [];
+  let fotoDataURL = '';
+
+  const MODELOS = {
+    "1": {
+      titulo: "PAUTA PARA O CORPO DE ANCIÃOS",
+      sub: "Congregação Miguel Badra (57323)",
+      end: "",
+      exibirEnd: false
+    },
+    "2": {
+      titulo: "PAUTA PARA A COMISSÃO DE FUNCIONAMENTO",
+      sub: "Salão do Reino das Testemunhas de Jeová",
+      end: "Rua José Ferreira Neves, 347",
+      exibirEnd: true
+    },
+    "3": {
+      titulo: "PAUTA PARA A COMISSÃO DE FUNCIONAMENTO<br>& TODOS OS CORPOS DE ANCIÃOS",
+      sub: "Salão do Reino das Testemunhas de Jeová",
+      end: "Rua José Ferreira Neves, 347",
+      exibirEnd: true
+    }
+  };
+
+  // BANCO DE DADOS
+  function obterBanco() {
+    const raw = localStorage.getItem(DB_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function gravarBanco(lista) {
+    localStorage.setItem(DB_KEY, JSON.stringify(lista));
+    atualizarSelectBanco();
+  }
+
+  function atualizarSelectBanco() {
+    const lista = obterBanco();
+    const select = document.getElementById('pautasSalvasSelect');
+    select.innerHTML = '<option value="">-- Selecione uma pauta salva --</option>';
+
+    lista.forEach((p, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = `${p.identificador} (${p.data || 'Sem Data'})`;
+      select.appendChild(opt);
+    });
+  }
+
+  function salvarPautaNoBanco() {
+    const dados = capturarDadosFormulario();
+    const nomePadrao = dados.data ? `Pauta ${dados.data} - ${dados.local || 'Geral'}` : `Pauta de ${new Date().toLocaleDateString('pt-BR')}`;
+    const identificador = prompt("Digite um nome para identificar esta pauta no banco:", nomePadrao);
+
+    if (!identificador) return;
+
+    dados.identificador = identificador;
+    const banco = obterBanco();
+
+    // Se já existir com o mesmo identificador, atualiza
+    const indexExistente = banco.findIndex(b => b.identificador === identificador);
+    if (indexExistente >= 0) {
+      banco[indexExistente] = dados;
+    } else {
+      banco.push(dados);
+    }
+
+    gravarBanco(banco);
+    alert(`Pauta "${identificador}" salva com sucesso no banco de dados!`);
+  }
+
+  function carregarPautaSelecionada() {
+    const select = document.getElementById('pautasSalvasSelect');
+    const idx = select.value;
+    if (idx === "") return;
+
+    const banco = obterBanco();
+    const pauta = banco[idx];
+    if (pauta) {
+      preencherFormularioComDados(pauta);
+      autoSaveTemporario();
+    }
+  }
+
+  function excluirPautaDoBanco() {
+    const select = document.getElementById('pautasSalvasSelect');
+    const idx = select.value;
+    if (idx === "") {
+      alert("Por favor, selecione primeiro a pauta que deseja excluir no seletor.");
+      return;
+    }
+
+    const banco = obterBanco();
+    if (confirm(`Deseja realmente excluir a pauta "${banco[idx].identificador}" do banco?`)) {
+      banco.splice(idx, 1);
+      gravarBanco(banco);
+      novaPautaEmBranco();
+    }
+  }
+
+  function exportarBackupJSON() {
+    const banco = obterBanco();
+    const blob = new Blob([JSON.stringify(banco, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup_pautas_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  }
+
+  // FOTO
+  function atualizarFoto(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        fotoDataURL = evt.target.result;
+        renderizarFoto(fotoDataURL);
+        autoSaveTemporario();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function renderizarFoto(src) {
+    const box = document.getElementById('photoBox');
+    if (src) {
+      box.innerHTML = `<img src="${src}" alt="Foto da Pauta">`;
+    } else {
+      box.innerHTML = `<span style="font-size:11px; color:#64748b; font-weight:700;">Foto</span>`;
+    }
+  }
+
+  // FORMULÁRIO E TÓPICOS
+  function alterarModeloCabecalho() {
+    const val = document.getElementById('tipoCabecalhoSelect').value;
+    const conf = MODELOS[val];
+    document.getElementById('cabecalhoTitulo').innerHTML = conf.titulo;
+    document.getElementById('cabecalhoSub').innerText = conf.sub;
+    
+    const endEl = document.getElementById('cabecalhoEnd');
+    if (conf.exibirEnd) {
+      endEl.innerText = conf.end;
+      endEl.style.display = 'block';
+    } else {
+      endEl.style.display = 'none';
+    }
+    autoSaveTemporario();
+  }
+
+  function criarEstruturaAssunto(dados = {}) {
+    return {
+      id: dados.id || Date.now() + Math.random(),
+      tema: dados.tema || '',
+      responsavel: dados.responsavel || '',
+      minutos: dados.minutos !== undefined ? dados.minutos : 15,
+      referencias: dados.referencias || ''
+    };
+  }
+
+  function renderizarAssuntos() {
+    const container = document.getElementById('containerAssuntos');
+    container.innerHTML = '';
+
+    assuntos.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'topic-item';
+      card.innerHTML = `
+        <div class="topic-row-header">
+          <span class="topic-seq">${index + 1}</span>
+          <input type="text" class="topic-title-input" placeholder="Tema ou Assunto a ser tratado..." 
+            value="${item.tema}" oninput="atualizarCampoAssunto(${index}, 'tema', this.value)">
+          <button class="btn-del-topic" onclick="removerAssunto(${index})">✕ Excluir</button>
+        </div>
+
+        <div class="topic-row-middle">
+          <div class="topic-col">
+            <label>Quem Irá Considerar</label>
+            <input type="text" placeholder="Nome do(s) irmão(s)" 
+              value="${item.responsavel}" oninput="atualizarCampoAssunto(${index}, 'responsavel', this.value)">
+          </div>
+          <div class="topic-col">
+            <label>Tempo (Minutos)</label>
+            <input type="number" min="0" step="5" placeholder="15" 
+              value="${item.minutos}" oninput="atualizarCampoAssunto(${index}, 'minutos', parseInt(this.value) || 0)">
+          </div>
+        </div>
+
+        <div class="topic-row-bottom">
+          <label>Referências</label>
+          <textarea rows="2" placeholder="Textos, manuais, cartas ou parágrafos..." 
+            oninput="atualizarCampoAssunto(${index}, 'referencias', this.value)">${item.referencias}</textarea>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    calcularTempoTotal();
+  }
+
+  function adicionarTopico() {
+    assuntos.push(criarEstruturaAssunto());
+    renderizarAssuntos();
+    autoSaveTemporario();
+  }
+
+  function removerAssunto(idx) {
+    assuntos.splice(idx, 1);
+    renderizarAssuntos();
+    autoSaveTemporario();
+  }
+
+  function atualizarCampoAssunto(idx, campo, val) {
+    assuntos[idx][campo] = val;
+    if (campo === 'minutos') calcularTempoTotal();
+    autoSaveTemporario();
+  }
+
+  function calcularTempoTotal() {
+    const total = assuntos.reduce((acc, cur) => acc + (Number(cur.minutos) || 0), 0);
+    const horas = Math.floor(total / 60);
+    const mins = total % 60;
+    let texto = `${total} minutos`;
+    if (horas > 0) texto += ` (${horas}h ${mins}min)`;
+    document.getElementById('displayTempoTotal').innerText = texto;
+  }
+
+  function capturarDadosFormulario() {
+    return {
+      tipoCabecalho: document.getElementById('tipoCabecalhoSelect').value,
+      data: document.getElementById('campoData').value,
+      hora: document.getElementById('campoHora').value,
+      local: document.getElementById('campoLocal').value,
+      oracaoIni: document.getElementById('campoOracaoIni').value,
+      oracaoFim: document.getElementById('campoOracaoFim').value,
+      resumo: document.getElementById('campoResumo').value,
+      assuntos: assuntos,
+      foto: fotoDataURL
+    };
+  }
+
+  function preencherFormularioComDados(dados) {
+    document.getElementById('tipoCabecalhoSelect').value = dados.tipoCabecalho || "3";
+    alterarModeloCabecalho();
+
+    document.getElementById('campoData').value = dados.data || '';
+    document.getElementById('campoHora').value = dados.hora || '';
+    document.getElementById('campoLocal').value = dados.local || '';
+    document.getElementById('campoOracaoIni').value = dados.oracaoIni || '';
+    document.getElementById('campoOracaoFim').value = dados.oracaoFim || '';
+    document.getElementById('campoResumo').value = dados.resumo || '';
+
+    assuntos = dados.assuntos || [];
+    fotoDataURL = dados.foto || '';
+    renderizarFoto(fotoDataURL);
+    renderizarAssuntos();
+  }
+
+  function autoSaveTemporario() {
+    const dados = capturarDadosFormulario();
+    localStorage.setItem(CURRENT_KEY, JSON.stringify(dados));
+  }
+
+  function carregarDraftOuInicial() {
+    atualizarSelectBanco();
+    const raw = localStorage.getItem(CURRENT_KEY);
+    if (raw) {
+      try {
+        preencherFormularioComDados(JSON.parse(raw));
+        return;
+      } catch(e) { console.error(e); }
+    }
+
+    // Inicialização se estiver vazio
+    assuntos = [criarEstruturaAssunto({ minutos: 30 })];
+    renderizarAssuntos();
+    alterarModeloCabecalho();
+  }
+
+  function novaPautaEmBranco() {
+    if (confirm("Limpar os campos para iniciar uma nova pauta?")) {
+      localStorage.removeItem(CURRENT_KEY);
+      fotoDataURL = '';
+      renderizarFoto('');
+      preencherFormularioComDados({
+        tipoCabecalho: "3",
+        assuntos: [criarEstruturaAssunto({ minutos: 15 })]
+      });
+      document.getElementById('pautasSalvasSelect').value = "";
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', carregarDraftOuInicial);
+</script>
+
+</body>
+</html>
